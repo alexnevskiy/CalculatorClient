@@ -7,10 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 public class Client extends Thread {
     private final String address;
@@ -20,7 +17,7 @@ public class Client extends Thread {
     private ReceiverThread receiverThread;
     private final Scanner scanner;
     private final Set<Byte> identifications;
-    private byte currentId = Byte.MIN_VALUE;
+    private final Random random = new Random();
     private CalculatorPackage message;
 
     public Client(String address, int port) {
@@ -33,25 +30,30 @@ public class Client extends Thread {
     @Override
     public void run() {
         try {
-            socket = new Socket(address, port);
+            try {
+                socket = new Socket(address, port);
+            } catch (IOException exception) {
+                System.out.println(Phrases.SERVER_ERROR.getPhrase());
+                return;
+            }
             outputStream = new DataOutputStream(socket.getOutputStream());
-            receiverThread = new ReceiverThread(socket);
+            receiverThread = new ReceiverThread(socket, identifications);
             receiverThread.start();
 
             while (!socket.isClosed()) {
                 message = new CalculatorPackage();
-                readMessageFromConsole();
-                writeMessage();
+                byte id = readMessageFromConsole();
+                writeMessage(id);
             }
         } catch (IOException exception) {
             closeClient();
         }
     }
 
-    private void readMessageFromConsole() {
+    private byte readMessageFromConsole() {
         readOperation();
         readArguments();
-        generateId();
+        return generateId();
     }
 
     private void readOperation() {
@@ -135,10 +137,19 @@ public class Client extends Thread {
         }
     }
 
-    private void generateId() {
-        message.setId(currentId);
-        identifications.add(currentId);
-        currentId++;
+    private byte generateId() {
+        boolean correctId = false;
+        byte[] id = new byte[1];
+        while (!correctId) {
+            random.nextBytes(id);
+            if (identifications.contains(id[0])) {
+                continue;
+            }
+            message.setId(id[0]);
+            identifications.add(id[0]);
+            correctId = true;
+        }
+        return id[0];
     }
 
     private boolean checkArguments(String[] arguments) {
@@ -179,8 +190,9 @@ public class Client extends Thread {
         return true;
     }
 
-    private void writeMessage() throws IOException {
+    private void writeMessage(byte id) throws IOException {
         outputStream.write(message.toByte());
+        System.out.println(Phrases.SEND_MESSAGE.getPhrase() + id + "\n");
     }
 
     private void closeClient() {
