@@ -70,6 +70,11 @@ public class Client extends Thread {
     }
 
     private boolean checkOperation(String operation) {
+        boolean exit = checkExit(operation);
+        if (exit) {
+            closeClient();
+            return true;
+        }
         switch (operation) {
             case "+":
                 message.setSpeed((byte) 1);
@@ -153,6 +158,11 @@ public class Client extends Thread {
     }
 
     private boolean checkArguments(String[] arguments) {
+        boolean exit = checkExit(arguments[0]);
+        if (exit) {
+            closeClient();
+            return true;
+        }
         if (arguments.length != 2) {
             return false;
         }
@@ -168,6 +178,11 @@ public class Client extends Thread {
     }
 
     private boolean checkTime(String timeString) {
+        boolean exit = checkExit(timeString);
+        if (exit) {
+            closeClient();
+            return true;
+        }
         try {
             int time = Integer.parseInt(timeString);
             if ((time < 1) || (time > 65535)) {
@@ -181,6 +196,11 @@ public class Client extends Thread {
     }
 
     private boolean checkArgument(String argumentString) {
+        boolean exit = checkExit(argumentString);
+        if (exit) {
+            closeClient();
+            return true;
+        }
         try {
             double argument = Double.parseDouble(argumentString);
             message.setFirstArgument(argument);
@@ -188,6 +208,10 @@ public class Client extends Thread {
             return false;
         }
         return true;
+    }
+
+    private boolean checkExit(String argument) {
+        return argument.equals("-exit");
     }
 
     private void writeMessage(byte id) throws IOException {
@@ -210,5 +234,6 @@ public class Client extends Thread {
             e.printStackTrace();
         }
         System.out.println("Клиент выключен.");
+        System.exit(0);
     }
 }
