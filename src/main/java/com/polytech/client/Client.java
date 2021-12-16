@@ -211,7 +211,7 @@ public class Client extends Thread {
     }
 
     private boolean checkExit(String argument) {
-        return argument.equals("-exit");
+        return argument.equals(Phrases.EXIT.getPhrase());
     }
 
     private void writeMessage(byte id) throws IOException {
